@@ -1,5 +1,6 @@
-# Bricks from aus_production
 library(fpp3)
+
+# Bricks from aus_production
 
 aus_production
 
@@ -43,7 +44,6 @@ peak_close
 # Ingesting tute1 file and creating tsibble
 
 tute1 <- readr::read_csv("tute1.csv")
-View(tute1)
 
 mytimeseries <- tute1 |>
   mutate(Quarter = yearquarter(Quarter)) |>
