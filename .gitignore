@@ -3,3 +3,6 @@
 .RData
 .Ruserdata
 /rsconnect
+*.csv
+*.xlsx
+*.html
