@@ -72,6 +72,10 @@ us_df |> filter(state %in% c('Maine', 'Vermont', 'New Hampshire', 'Massachusetts
   labs(y = "Consumption",
        title = "Annual natural gas consumption in New England")
 
+# Ingestion tourism.xlsx and creating a new tsibble
+# As well as finding the average max overnight trips
+# and the total trips by state
+
 trsm_df <- readxl::read_excel("tourism.xlsx") |>
   mutate(Quarter = yearquarter(Quarter)) |>
   as_tsibble(key = c(Region, State, Purpose),
@@ -90,9 +94,95 @@ trsm_df |>
   ungroup() -> tourism_by_state
 
 tourism_by_state |> autoplot()
+
+# Assessing the aus_arrivals tsibble and identifying
+# patterns for each nation
              
 aus_arrivals |> autoplot()
 
 gg_season(aus_arrivals)
 
 gg_subseries(aus_arrivals)
+
+# Monthly Australian retail data
+
+set.seed(12345678)
+myseries <- aus_retail |>
+  filter(`Series ID` == sample(aus_retail$`Series ID`, 1))
+
+myseries |> autoplot()
+
+gg_season(myseries)
+
+gg_subseries(myseries)
+
+gg_lag(myseries)
+
+myseries |> ACF(Turnover) |> autoplot()
+
+# The seasonality shows that each year there is an increased
+# turnover around Christmas and the summer months
+
+# It is following an upward trend
+
+# There is some indication around the late 1990s and late 2000s
+# that there is decreased spending, likely due to recessions
+
+# Total Private tsibble exploration
+
+us_private <- us_employment |>
+  filter(Title == "Total Private")
+
+us_private
+
+us_private |> autoplot(Employed)
+
+gg_season(us_private)
+
+gg_subseries(us_private)
+
+gg_lag(us_private)
+
+us_private |> ACF(Employed) |> autoplot()
+
+# There is a clear upward trend here with employment
+# with regular cycles were employment decreases due to
+# economic recession. Seasonality is hard to tell due to the
+# structure of the data but splitting each year into quarters
+# would provide greater insight
+
+
+bricks |> autoplot()
+
+gg_season(bricks)
+
+gg_subseries(bricks)
+
+gg_lag(bricks)
+
+bricks |> ACF(Bricks) |> autoplot()
+
+# There is a clear seasonality of more bricks being
+# produced around Q3 with there also being high production
+# in Q2 and Q4 respectively where the graph then drops off
+# as production slows due to the winter months
+
+hare <- pelt |>
+  select(Hare)
+
+hare |> autoplot()
+
+# gg_season(hare, Hare)
+
+gg_subseries(hare)
+
+gg_lag(hare)
+
+hare |> ACF(Hare) |> autoplot()
+
+# This tsibble shows a peak of hare pelts around the
+# 1860s this could infer that more pelts were traded
+# due to the need for fur during the American Civil War.
+# Further, there appears to be general increased in pelt trading
+# every 5 years and a drop that follows it. This could be due to population
+# recovery. 
