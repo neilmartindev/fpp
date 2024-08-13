@@ -186,3 +186,82 @@ hare |> ACF(Hare) |> autoplot()
 # Further, there appears to be general increased in pelt trading
 # every 5 years and a drop that follows it. This could be due to population
 # recovery. 
+
+cost <- PBS |> 
+  filter(ATC2 == "H02") |>
+  select(Month, Cost)
+
+cost |> autoplot()
+
+gg_season(cost)
+
+gg_subseries(cost)
+
+# gg_lag(cost)
+
+cost |> ACF() |> autoplot()
+
+# There is a clear seasonality around the summer months
+# for Concessional Co-payments with March - June being the peak.
+# Concessional safety net has a seasonality around winter and
+# epaks in January. This is the same with General Safety net.
+# However, with General Co-payments, these appears to be more
+# consistent.
+
+us_gasoline 
+
+us_gasoline |> autoplot()
+
+gg_season(us_gasoline)
+
+gg_subseries(us_gasoline)
+
+gg_lag(us_gasoline)
+
+us_gasoline |> ACF() |> autoplot()
+
+# The US gasoline tsibble shows a steady trend of increased
+# gasoline production year on year with a slight drop around the 
+# 2008 financial crisis. There appears to be large drops in production and 
+# sudden ramp up. This could be to ensure the price of oil is kept competitive
+# by not producing too many barrels. The seasonal graph overall shows more barrels
+# produced each year, indicative of an increased reliance on cars for a growing
+# population.
+
+aus_livestock
+
+pigs_1972_2018 <- aus_livestock |>
+  filter(Month >= yearmonth("1990 Jan") & Month <= yearmonth("1995 Dec")) |>
+  filter(Animal == "Pigs") |>
+  filter(State == "Victoria")
+
+pigs_1972_2018 |> ACF() |> autoplot()
+
+pigs_1972_2018 |> autoplot()
+
+# The plot demonstrates that there is a steady decay
+# with each lag, with an increase during the 12th lag
+# which could show some seasonality in the data.
+
+# If a longer of period of time would be used, the graph
+# would still have a steady decay and even demonstrate a
+# jump around lag 24.
+
+dgoog <- gafa_stock |>
+  filter(Symbol == "GOOG", year(Date) >= 2018) |>
+  mutate(trading_day = row_number()) |>
+  update_tsibble(index = trading_day, regular = TRUE) |>
+  mutate(diff = difference(Close))
+
+# The tsibble was re-indexed due to the mutation of
+# the trading day, ensuring proper time series operations.
+
+dgoog |> ACF() |> autoplot()
+
+dgoog |> autoplot()
+
+# Due to the ACF reading decreasing steadily overtime,
+# this does infer that there is some trend present in this year.
+# However, the stock market is unpredictable and open to many
+# different global factors. I believe if more than this year 
+# was used, then there may be a better identification of white noise.
