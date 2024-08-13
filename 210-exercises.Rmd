@@ -1,0 +1,282 @@
+---
+title: "Forecasting: Principles and Practice Chapter 2 Exercises"
+author: "Neil Martin"
+date: "2024-08-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(fpp3)
+library(knitr)
+library(ggplot2)
+library(readxl)
+library(dplyr)
+library(readr)
+```
+### Bricks from aus_production
+```{r bricks}
+aus_production
+
+bricks <- aus_production |>
+  select(Quarter, Bricks)
+
+bricks |> autoplot()
+
+```
+
+### Load and select the Lynx data from pelt
+```{r lynx}
+lynx <- pelt |>
+  select(Year, Lynx)
+
+lynx |> autoplot()
+
+```
+
+### Select and plot the closing price of GAFA stocks
+```{r google1}
+gafa_stock
+
+close <- gafa_stock |>
+  select(Date, Symbol, Close)
+
+close |> autoplot() +
+  labs(y = "Closing Price per share ($)",
+       title = "GAFA stock closing price")
+
+peak_close <- close |>
+  group_by(Symbol) |>
+  filter(Close == max(Close)) |>
+  select(Symbol, Date)
+peak_close
+```
+### Tute1
+```{r tute1}
+
+tute1 <- read_csv("tute1.csv")
+
+mytimeseries <- tute1 |>
+  mutate(Quarter = yearquarter(Quarter)) |>
+  as_tsibble(index = Quarter)
+
+mytimeseries |> 
+  pivot_longer(-Quarter) |>
+  ggplot(aes(x = Quarter, y = value, color = name)) +
+  geom_line() +
+  facet_grid(name ~ ., scales = "free_y")
+```
+
+### US gas
+```{r usgas}
+head(USgas::us_total)
+
+us_df <- USgas::us_total |>
+  as_tsibble(key = state,
+             index = year)
+
+us_df
+
+us_df |> filter(state %in% c('Maine', 'Vermont', 'New Hampshire', 'Massachusetts', 'Connecticut', 'Rhode Island')) |>
+  ggplot(aes(x = year, y = y, color = state)) +
+  geom_line() +
+  facet_grid(state ~., scales = "free_y") +
+  labs(y = "Consumption",
+       title = "Annual natural gas consumption in New England")
+
+```
+
+### Australian tourism 
+```{r tourism}
+
+trsm_df <- readxl::read_excel("tourism.xlsx") |>
+  mutate(Quarter = yearquarter(Quarter)) |>
+  as_tsibble(key = c(Region, State, Purpose),
+             index = Quarter)
+
+reg_purp <- trsm_df |>
+  group_by(Region, Purpose) |>
+  mutate(Avg_Trips = mean(Trips)) |>
+  ungroup() |>
+  filter(Avg_Trips  == max(Avg_Trips)) |>
+  distinct(Region, Purpose)
+    
+trsm_df |>
+  group_by(State) |>
+  summarise(Trips = sum(Trips)) |>
+  ungroup() -> tourism_by_state
+
+tourism_by_state |> autoplot()
+
+```
+
+### Australian arrivals
+```{r ausarrivals}
+
+aus_arrivals |> autoplot()
+
+gg_season(aus_arrivals)
+
+gg_subseries(aus_arrivals)
+
+```
+### Australian retail
+```{r ausretail}
+set.seed(12345678)
+myseries <- aus_retail |>
+  filter(`Series ID` == sample(aus_retail$`Series ID`, 1))
+
+myseries |> autoplot()
+
+gg_season(myseries)
+
+gg_subseries(myseries)
+
+gg_lag(myseries)
+
+myseries |> ACF(Turnover) |> autoplot()
+```
+
+<p>The seasonality shows that each year there is an increased turnover around Christmas and the summer months. Generally, this is an upward trend.<p>
+
+<p>There is some indication around the late 1990s and late 2000s that there is decreased spending, likely due to recessions.<p>
+
+### US employment
+```{r usemployment}
+
+us_private <- us_employment |>
+  filter(Title == "Total Private")
+
+us_private
+
+us_private |> autoplot(Employed)
+
+gg_season(us_private)
+
+gg_subseries(us_private)
+
+gg_lag(us_private)
+
+us_private |> ACF(Employed) |> autoplot()
+
+```
+
+<p>There is a clear upward trend here with employment
+with regular cycles were employment decreases due to economic recession. Seasonality is hard to tell due to the structure of the data but splitting each year into quarters would provide greater insight.<p>
+### Exploring Bricks in Production
+```{r brickagain}
+
+bricks |> autoplot()
+
+gg_season(bricks)
+
+gg_subseries(bricks)
+
+gg_lag(bricks)
+
+bricks |> ACF(Bricks) |> autoplot()
+```
+
+<p>There is a clear seasonality of more bricks being
+produced around Q3 with there also being high production in Q2 and Q4 respectively where the graph then drops off as production slows due to the winter months.<p>
+
+### Exploring Hares in Pelts
+```{r hare}
+
+hare <- pelt |>
+  select(Hare)
+
+hare |> autoplot()
+
+# gg_season(hare, Hare)
+
+gg_subseries(hare)
+
+gg_lag(hare)
+
+hare |> ACF(Hare) |> autoplot()
+```
+
+<p>This tsibble shows a peak of hare pelts around the
+1860s this could infer that more pelts were traded due to the need for fur during the American Civil War. Further, there appears to be general increased in pelt trading every 5 years and a drop that follows it. This could be due to population recovery or due to hunting of predatory animals.<p>
+
+### Exploring Cost in PBS
+```{r pbs}
+
+cost <- PBS |> 
+  filter(ATC2 == "H02") |>
+  select(Month, Cost)
+
+cost |> autoplot()
+
+gg_season(cost)
+
+gg_subseries(cost)
+
+# gg_lag(cost)
+cost |> ACF() |> autoplot()
+
+```
+
+<p>There is a clear seasonality around the summer months for Concessional Co-payments with March - June being the peak. Concessional safety net has a seasonality around winter and peaks in January. This is the same with General Safety net.However, with General Co-payments, these appears to be more consistent.<p>
+
+### Exploring US gasoline
+```{r usg}
+
+us_gasoline 
+
+us_gasoline |> autoplot()
+
+gg_season(us_gasoline)
+
+gg_subseries(us_gasoline)
+
+gg_lag(us_gasoline)
+
+us_gasoline |> ACF() |> autoplot()
+
+```
+
+<p>The US gasoline tsibble shows a steady trend of increased gasoline production year on year with a slight drop around the 2008 financial crisis. There appears to be large drops in production and sudden ramp up. This could be to ensure the price of oil is kept competitive by not producing too many barrels. The seasonal graph overall shows more barrels produced each year, indicative of an increased reliance on cars for a growing population.<p>
+
+### Exploring Australian livestock
+```{r auslivestock}
+
+aus_livestock
+
+pigs_1972_2018 <- aus_livestock |>
+  filter(Month >= yearmonth("1990 Jan") & Month <= yearmonth("1995 Dec")) |>
+  filter(Animal == "Pigs") |>
+  filter(State == "Victoria")
+
+pigs_1972_2018 |> ACF() |> autoplot()
+
+pigs_1972_2018 |> autoplot()
+
+```
+
+<p>The plot demonstrates that there is a steady decay
+with each lag, with an increase during the 12th lag
+which could show some seasonality in the data.<p>
+
+<p>If a longer of period of time would be used, the graph would still have a steady decay and even demonstrate a jump around lag 24.<p>
+
+### Exploring 2018 GAFA stock
+```{r dgoog}
+
+dgoog <- gafa_stock |>
+  filter(Symbol == "GOOG", year(Date) >= 2018) |>
+  mutate(trading_day = row_number()) |>
+  update_tsibble(index = trading_day, regular = TRUE) |>
+  mutate(diff = difference(Close))
+
+
+
+dgoog |> ACF() |> autoplot()
+
+dgoog |> autoplot()
+```
+
+<p>The tsibble was re-indexed due to the mutation of
+the trading day, ensuring proper time series operations.<p>
+
+<p>Due to the ACF reading decreasing steadily overtime, this does infer that there is some trend present in this year. However, the stock market is unpredictable and open to many different global factors. I believe if more than this year was used, then there may be a better identification of white noise.<p>
