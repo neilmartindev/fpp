@@ -1,0 +1,106 @@
+---
+title: "Forecasting: Principles and Practice Chapter 3 Exercises"
+author: "Neil Martin"
+date: "2024-08-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(fpp3)
+library(knitr)
+library(ggplot2)
+library(readxl)
+library(dplyr)
+library(readr)
+library(seasonal)
+library(latex2exp)
+```
+#### 1. Consider the GDP information in global_economy. Plot the GDP per capita for each country over time. Which country has the highest GDP per capita? How has this changed over time?
+```{r gdp_per_capita}
+
+global_economy |>
+  autoplot(GDP / Population, show.legend = FALSE) +
+  labs(title = "GDP per capita", y = "$US")
+
+sa_countries <- c("Argentina", "Brazil", "Chile", "Colombia", "Peru", "Venezuela", "Ecuador", "Bolivia")
+
+sa_global_economy <- global_economy |> 
+  filter(Country %in% sa_countries)
+
+sa_global_economy |>
+  ggplot(aes(x = Year, y = GDP / Population)) + 
+  geom_line() + 
+  facet_wrap(~ Country, scales = "free_y") + 
+  labs(title = "GDP per Capita of South American Countries", 
+       y = "GDP per Capita", 
+       x = "Year")
+
+```
+
+<p> Monaco has the greatest GDP per capita as it is a known tax haven. This has increased year on year with a slight dip around the 2008 financial crisis and the pandemic but it has since recovered.</p>
+
+#### 2. For each of the following series, make a graph of the data. If transforming seems appropriate, do so and describe the effect.
+
+```{r transform}
+
+us_gdp <- global_economy |>
+  filter(Country == "United States")
+
+us_gdp |> autoplot()
+
+vic_livestock <- aus_livestock |>
+  filter(State == "Victoria", Animal == "Bulls, bullocks and steers")
+
+vic_livestock |> autoplot()
+
+v <- vic_elec |>
+  group_by(Date) |>
+  mutate(Demand = sum(Demand)) |>
+  distinct(Date, Demand)
+
+v |> as_tsibble(index = Date) |>
+  autoplot() +
+  labs(title = "Daily Victoria Electricity Demand")
+
+v |> mutate(Date = yearmonth(Date)) |>
+  group_by(Date) |>
+  summarise(Demand = sum(Demand)) |>
+  as_tsibble(index = Date) |>
+  autoplot() +
+  labs(title = "Monthly Victoria Electricity Demand")
+
+aus_production |>
+  autoplot(Gas)
+
+lambda <- aus_production |>
+  features(Gas, features = guerrero) |>
+  pull(lambda_guerrero)
+
+aus_production |>
+  autoplot(box_cox(Gas, lambda)) +
+  labs(y = "", title = TeX(paste0("Transformed Gas Production with $\\lambda$ = ",
+         round(lambda,2))))
+
+```
+
+<p> The US retail and Victorian bulls, bullocks and steers data did not require any transformation. However, due to the volume of the the data, the Victoria Electricity demand was transformed into monthly demand for better visibility. The Canadian gas data utilised the Guerrero method which normalised the variance in the data. </p>
+
+#### Why is a Box-Cox transformation unhelpful for the canadian_gas data?
+
+```{r ca_gas}
+
+canadian_gas |> 
+  autoplot(Volume) +
+  labs(title = "Non-Transformed Gas Production")
+
+lambda <- canadian_gas |>
+  features(Volume, features = guerrero) |>
+  pull(lambda_guerrero)
+
+canadian_gas |> 
+  autoplot(box_cox(Volume, lambda)) +
+  labs( y = "", title = TeX(paste0("Transformed Gas Production with $\\lambda$ = ",
+         round(lambda,2))))
+
+````
+<p> The Box-Cox transformation is unhelpful because it doesn't effectively flatten the variation in the time series. For example, the period between 1980 Jan and 1990 Jan still has large amounts of variation compared to the rest of the observations.
