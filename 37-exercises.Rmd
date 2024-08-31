@@ -102,5 +102,121 @@ canadian_gas |>
   labs( y = "", title = TeX(paste0("Transformed Gas Production with $\\lambda$ = ",
          round(lambda,2))))
 
-````
-<p> The Box-Cox transformation is unhelpful because it doesn't effectively flatten the variation in the time series. For example, the period between 1980 Jan and 1990 Jan still has large amounts of variation compared to the rest of the observations.
+```
+<p> The Box-Cox transformation is unhelpful because it doesn't effectively flatten the variation in the time series. For example, the period between 1980 Jan and 1990 Jan still has large amounts of variation compared to the rest of the observations.</p>
+
+#### What Box-Cox transformation would you select for your retail data (from Exercise 7 in Section 2.10)?
+
+```{r bc_retaildata}
+
+set.seed(123)
+myseries <- aus_retail %>%
+  filter(`Series ID` == sample(aus_retail$`Series ID`,1)) 
+
+myseries |> autoplot(Turnover)
+```
+
+```{r gf_retaildata}
+
+lambda <- myseries |>
+  features(Turnover, features = guerrero) |>
+  pull(lambda_guerrero)
+myseries |>
+  autoplot(box_cox(Turnover, lambda)) +
+  labs(y = "",
+       title = paste("Transformation with lambda = ", round(lambda,2)))
+
+```
+
+#### For the following series, find an appropriate Box-Cox transformation in order to stabilise the variance. Tobacco from aus_production, Economy class passengers between Melbourne and Sydney from ansett, and Pedestrian counts at Southern Cross Station from pedestrian.
+
+```{r tobacco}
+
+tobacco <- aus_production |>
+  select(Quarter = index(aus_production), Tobacco)
+
+tobacco |> autoplot()
+
+lambda <- tobacco |>
+  features(tobacco, features = guerrero) |>
+  pull(lambda_guerrero)
+
+tobacco |>
+  autoplot(box_cox(Tobacco, lambda)) +
+  labs(y = "",
+       title = paste("Transformation of Tobacco with lambda = ", round(lambda,2)))
+
+```
+
+<p> The Box-Cox transformation is not helpful for the tobacco data since it is just set to 1 with little transformation.</p>
+
+```{r economy_passengers}
+
+economy_mel_syd <- ansett |>
+  filter(Airports == "MEL-SYD", 
+         Class == "Economy")
+
+economy_mel_syd |> autoplot()
+
+lambda <- economy_mel_syd |>
+  features(Passengers, features = guerrero) |>
+  pull(lambda_guerrero)
+
+economy_mel_syd |>
+  autoplot(box_cox(Passengers, lambda)) +
+  labs(y = "",
+       title = paste("Transformation of Passengers with lambda = ", round(lambda,2)))
+
+```
+
+<p> For the passenger data the transformation outlines the variation a little clearer.</p>
+
+```{r pedestrian}
+
+southern_cross <- pedestrian |>
+  filter(Sensor == "Southern Cross Station")
+
+southern_cross |> autoplot(Count)
+
+lambda <- southern_cross |>
+  features(Count, features = guerrero) |>
+  pull(lambda_guerrero)
+
+southern_cross |>
+  autoplot(box_cox(Count, lambda)) +
+  labs(y = "",
+       title = paste("Transformation of Cross Station Count with lambda = ", round(lambda,2)))
+
+```
+
+<p> The Guerrero transformation helps to recognise greater varation compared to the original plot. </p>
+
+#### Consider the last five years of the Gas data from aus_production.
+
+```{r aus_gas}
+
+gas <- tail(aus_production, 5*4) |> select(Gas)
+
+gas |> autoplot()
+
+gas_dcmp <- gas |> 
+  model(classical_decomposition(Gas, type = "multiplicative"))
+
+components(gas_dcmp) |>
+  autoplot()
+
+```
+
+<p> From the first plot, there is a clear trend showing a gradual increase in gas production with seasonal increases during Q3 and Q4 with big drops during Q1 each year. 
+
+The results from the decomposition support the graphical interpretation from part a, showing a clear trend and seasonality with the data.</p>
+
+```{r aus_gas_seasonality}
+
+components(gas_dcmp) |>
+  as_tsibble() |>
+  autoplot(Gas, color = "gray") +
+  geom_line(aes(y=season_adjust), color = "red") +
+  labs(title = "Seasonally Adjusted Gas Production")
+
+```

@@ -1261,6 +1261,17 @@
       ],
       "Hash": "c19df082ba346b0ffa6f833e92de34d1"
     },
+    "seasonal": {
+      "Package": "seasonal",
+      "Version": "1.9.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "x13binary"
+      ],
+      "Hash": "afe35a1008ccd72e8e5faa0745bf03dd"
+    },
     "slider": {
       "Package": "slider",
       "Version": "0.3.1",
@@ -1518,6 +1529,13 @@
         "graphics"
       ],
       "Hash": "07909200e8bbe90426fbfeb73e1e27aa"
+    },
+    "x13binary": {
+      "Package": "x13binary",
+      "Version": "1.1.61",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "08d3be4da1f9a2e12526ab06e9beff60"
     },
     "xfun": {
       "Package": "xfun",
