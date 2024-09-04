@@ -43,7 +43,7 @@ pbs_features |>
 ```
 #### Use GGally::ggpairs() to look at the relationships between the STL-based features for the holiday series in the tourism data. Change seasonal_peak_year and seasonal_trough_year to factors, as shown in Figure 4.3. Which is the peak quarter for holidays in each state?
 
-```{r mean_standard_dev}
+```{r tourism_cont}
 
 tourism |>
   features(Trips, feat_stl) |>
@@ -59,4 +59,6 @@ tourism %>%
   summarise(Trips = sum(Trips)) %>%
   features(Trips, feat_stl) %>%
   select(State, seasonal_peak_year)
-```
+```   
+
+#### Personally found the last chapter incredibly confusing.
