@@ -14,6 +14,9 @@ library(dplyr)
 library(readr)
 library(seasonal)
 library(latex2exp)
+library(tsibble)
+library(feasts)
+library(tidyr)
 ```
 #### 1. Consider the GDP information in global_economy. Plot the GDP per capita for each country over time. Which country has the highest GDP per capita? How has this changed over time?
 ```{r gdp_per_capita}
@@ -220,3 +223,85 @@ components(gas_dcmp) |>
   labs(title = "Seasonally Adjusted Gas Production")
 
 ```
+
+#### Recall your retail time series data (from Exercise 7 in Section 2.10). Decompose the series using X-11. Does it reveal any outliers, or unusual features that you had not noticed previously?
+
+```{r x11}
+
+
+
+tute1 <- readr::read_csv("tute1.csv")
+
+tutets <- tute1 |>
+  mutate(Quarter = yearquarter(Quarter)) |>
+  as_tsibble(index = Quarter)
+
+start_year <- year(min(tutets$Quarter))
+start_quarter <- quarter(min(tutets$Quarter))
+frequency <- 4  # Quarterly data
+
+# Convert to ts object
+sales_ts <- ts(tutets$Sales, start = c(start_year, start_quarter), frequency = frequency)
+
+# Perform X-11 decomposition
+decomposed_sales <- seas(sales_ts, x11 = "")
+
+plot(decomposed_sales)
+
+```
+
+<p> An outlier can be seen marked by the LS around 2003 range with LS defining the Level Shift in the time series which is a sudden change.</p>
+
+![Time Series2](https://otexts.com/fpp3/fpp_files/figure-html/labour-1.png)
+
+![Time Series2](https://otexts.com/fpp3/fpp_files/figure-html/labour2-1.png)
+
+#### Write about 3–5 sentences describing the results of the decomposition. Pay particular attention to the scales of the graphs in making your interpretation.
+
+<p> The decompositions shows a clear upward trend in the data with a falling seasonality with a slight uptick after 2008. This could be originally due to the decline of retail shopping and the bounce back from the 2008 financial crisis. </p>
+
+#### Is the recession of 1991/1992 visible in the estimated components?
+
+<p> There is a drop in manpower around 1991 and 1992 on the remainder graph, indicating less manpower was employed during this time. </p>
+
+#### Can you produce a plausible seasonally adjusted series?
+
+```{r last_}
+
+canadian_gas |>
+ model(
+    STL(Volume ~ trend(window = 21) +
+                   season(window = 13),
+    robust = TRUE)) |>
+  components() |>
+  ggplot(aes(x = Month)) +
+  geom_line(aes(y = Volume, colour = "Data")) +
+  geom_line(aes(y = season_adjust,
+                colour = "Seasonally Adjusted")) +
+  geom_line(aes(y = trend, colour = "Trend")) +
+  labs(title = "STL decomposition of Canadian Gas Production") +
+  scale_colour_manual(
+    values = c("gray", "#0072B2", "#D55E00"),
+    breaks = c("Data", "Seasonally Adjusted", "Trend"))
+
+```
+
+#### Can you produce a plausible seasonally adjusted series?
+
+```{r last_1}
+
+canadian_gas %>%
+  model(x11 = X_13ARIMA_SEATS(Volume ~ x11())) %>%
+  components() %>%
+  autoplot()+
+  labs(title = "X-11 decomposition of Canadian Gas Production")
+
+canadian_gas %>%
+  model(seats = X_13ARIMA_SEATS(Volume ~ seats())) %>%
+  components() %>%
+autoplot() +
+  labs(title ="SEATS Decomposition of Canadian Gas Production")
+
+```
+
+<p> There is little difference between these graphs outside of the SEATS decomposition having a higher variance when it comes to remainders. However, due to this the X11 decomposition fits the Canadian gas data better. </p>
