@@ -290,15 +290,15 @@ canadian_gas |>
 
 ```{r last_1}
 
-canadian_gas %>%
+canadian_gas |>
   model(x11 = X_13ARIMA_SEATS(Volume ~ x11())) %>%
-  components() %>%
+  components() |>
   autoplot()+
   labs(title = "X-11 decomposition of Canadian Gas Production")
 
-canadian_gas %>%
-  model(seats = X_13ARIMA_SEATS(Volume ~ seats())) %>%
-  components() %>%
+canadian_gas |>
+  model(seats = X_13ARIMA_SEATS(Volume ~ seats())) |>
+  components() |>
 autoplot() +
   labs(title ="SEATS Decomposition of Canadian Gas Production")
 

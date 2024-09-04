@@ -1,0 +1,62 @@
+---
+title: "Forecasting: Principles and Practice Chapter 4 Exercises"
+author: "Neil Martin"
+date: "2024-09-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(fpp3)
+library(knitr)
+library(ggplot2)
+library(readxl)
+library(dplyr)
+library(readr)
+library(seasonal)
+library(latex2exp)
+library(tsibble)
+library(feasts)
+library(tidyr)
+```
+#### Write a function to compute the mean and standard deviation of a time series, and apply it to the PBS data. Plot the series with the highest mean, and the series with the lowest standard deviation.
+```{r mean_standard_dev}
+
+PBS
+
+meanstd <- function(x) {
+  c(
+    mean = mean(x, na.rm = TRUE),
+    sd = sd(x, na.rm = TRUE)
+  )
+}
+
+pbs_features <- PBS |>
+  features(Cost, features = meanstd)
+
+pbs_features
+
+pbs_features |>
+  filter(mean == max(mean))
+
+pbs_features |>
+  filter(sd == min(sd))
+```
+#### Use GGally::ggpairs() to look at the relationships between the STL-based features for the holiday series in the tourism data. Change seasonal_peak_year and seasonal_trough_year to factors, as shown in Figure 4.3. Which is the peak quarter for holidays in each state?
+
+```{r mean_standard_dev}
+
+tourism |>
+  features(Trips, feat_stl) |>
+  select(-Region, -State, -Purpose) |>
+  mutate(
+    seasonal_peak_year = factor(seasonal_peak_year),
+    seasonal_trough_year = factor(seasonal_trough_year),
+  ) |>
+  GGally::ggpairs()
+
+tourism %>%
+  group_by(State) %>%
+  summarise(Trips = sum(Trips)) %>%
+  features(Trips, feat_stl) %>%
+  select(State, seasonal_peak_year)
+```
