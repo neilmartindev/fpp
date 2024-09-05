@@ -1,0 +1,1 @@
+augment(beer_fit)
