@@ -1,0 +1,164 @@
+---
+title: "Forecasting: Principles and Practice Chapter 5 Exercises"
+author: "Neil Martin"
+date: "2024-09-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(fpp3)
+library(knitr)
+library(ggplot2)
+library(readxl)
+library(dplyr)
+library(readr)
+library(seasonal)
+library(latex2exp)
+library(tsibble)
+library(feasts)
+library(tidyr)
+```
+#### Produce forecasts for the following series using whichever of NAIVE(y), SNAIVE(y) or RW(y ~ drift()) is more appropriate in each case:
+
+#### Australian Population (global_economy)
+#### Bricks (aus_production)
+#### NSW Lambs (aus_livestock)
+#### Household wealth (hh_budget).
+#### Australian takeaway food turnover (aus_retail).
+
+```{r model_benchmark}
+
+global_economy |>
+  filter(Country == "Australia") |>
+  model(RW(Population ~ drift())) |>
+  forecast(h = 5) |>
+  autoplot(global_economy) +
+  labs(title = "Australia Population",
+       subtitle = "5 Year Population Forecast")
+
+bricks |>
+  model(SNAIVE(Bricks)) |>
+  forecast(h = 5) |>
+  autoplot(bricks) +
+  labs(title = "Bricks",
+       subtitle = "Future 5 Quarter Forecast")
+
+aus_livestock |>
+  filter(State == "New South Wales", Animal == 'Lambs') |>
+  model(SNAIVE(Count)) |>
+  forecast(h = 24) |>
+  autoplot(aus_livestock) +
+  labs(title = "Lambs in New South Wales",
+       subtitle = "Dec 2018 - Dec 2020 Forecast")
+
+hh_budget |>
+  model(RW(Wealth ~ drift())) |>
+  forecast(h = 5) |>
+  autoplot(hh_budget) +
+  labs(title = "Household Wealth",
+       subtitle = "5 Year Household Wealth Forecast")
+
+aus_retail |>
+  filter(Industry == "Cafes, restaurants and takeaway food services") |>
+  model(RW(Turnover ~ drift())) |>
+  forecast( h = 24) |>
+  autoplot(aus_retail) +
+  labs(title = "Australian Takeaway Food Turnover",
+       subtitle = "Apr 1982 - Dec 2018, Forecasted until Dec 2021") +
+  facet_wrap(~State, scales = "free")
+
+```   
+
+#### Use the Facebook stock price (data set gafa_stock) to do the following:
+
+#### Produce a time plot of the series.
+#### Produce forecasts using the drift method and plot them.
+#### Show that the forecasts are identical to extending the line drawn between the first and last observations.
+#### Try using some of the other benchmark functions to forecast the same data set. Which do you think is best? Why?
+
+```{r fb_stock_again}
+
+fb_stock |> autoplot() +
+    labs(title = "FB Stock Open Price")
+
+fb_stock |>
+  model(RW(Open ~ drift())) |>
+  forecast(h = 63) |>
+  autoplot(fb_stock) +
+  labs(title = "FB Stock Open Price",
+       y = "USD($)")
+
+fb_stock |>
+  model(RW(Open ~ drift())) |>
+  forecast(h = 63) |>
+  autoplot(fb_stock) +
+  labs(title = "FB Stock Open Price") +
+    geom_segment(aes(x = 1, y = 54.83, xend = 1258, yend = 134.45),
+               colour = "red", linetype = "dashed")
+
+fb_stock |>
+  model(Drift = NAIVE(Open ~ drift()),
+        Mean = MEAN(Open),
+        Naive = NAIVE(Open)) |>
+  forecast(h = 63) |>
+  autoplot(fb_stock, level = NULL) +
+  labs(title = "FB Stock Open Price",
+       y = "USD($)")
+
+
+```   
+
+<p> None of the additional benchmarks are particularly useful. However, if I had to pick one it would be the drift.</p> 
+
+#### Apply a seasonal naïve method to the quarterly Australian beer production data from 1992. Check if the residuals look like white noise, and plot the forecasts. The following code will help.
+
+```{r whitenoise_beer}
+
+# Extract data of interest
+recent_production <- aus_production |>
+  filter(year(Quarter) >= 1992)
+# Define and estimate a model
+fit <- recent_production |> model(SNAIVE(Beer))
+# Look at the residuals
+fit |> gg_tsresiduals()
+# Look a some forecasts
+fit |> forecast() |> autoplot(recent_production)
+
+```   
+
+<p> The residuals are not white noise. This can be concluded from the results from the ACF function demonstrating peaks in Q4. </p>
+
+```{r exports_bricks}
+
+aus_exports <- global_economy |>
+  filter(Country == "Australia")
+
+aus_exports
+
+fit <- aus_exports |>
+  model(NAIVE(Exports))
+
+fit |> gg_tsresiduals() +
+  ggtitle("Residual Plot for Australian Exports")
+
+fit |> forecast() |> autoplot(aus_exports) +
+  ggtitle("Australian Exports")
+
+fit <- bricks |>
+  model(SNAIVE(Bricks))
+
+fit |> gg_tsresiduals() +
+  ggtitle("Residual Plot for Brick Production")
+
+fit |> forecast() |> autoplot(bricks) +
+  ggtitle("Australian Brick Production")
+```   
+<p> This data is not seasonal for the exports, therefore NAIVE is a better choice of model. For the Bricks data, the SNAIVE is better as this is broken down into quarters. The lag plot demonstrates clear seasonality with brick production increasing during Q4 and a reduction in production until the following quarter next year.</p>
+
+#### Apply a seasonal naïve method to the quarterly Australian beer production data from 1992. Check if the residuals look like white noise, and plot the forecasts. The following code will help.
+
+```{r exports_bricks}
+
+
+
+```   
