@@ -6,6 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+load(".RData")
 library(fpp3)
 library(knitr)
 library(ggplot2)
@@ -35,6 +36,12 @@ global_economy |>
   autoplot(global_economy) +
   labs(title = "Australia Population",
        subtitle = "5 Year Population Forecast")
+
+bricks <- aus_production |>
+  filter_index("1970 Q1" ~ "2004 Q4") |>
+  select(Bricks)
+
+bricks
 
 bricks |>
   model(SNAIVE(Bricks)) |>
@@ -77,6 +84,11 @@ aus_retail |>
 #### Try using some of the other benchmark functions to forecast the same data set. Which do you think is best? Why?
 
 ```{r fb_stock_again}
+
+fb_stock <- gafa_stock |>
+  filter(Symbol == "FB") |>
+  mutate(trading_day = row_number()) |>
+  update_tsibble(index = trading_day, regular = TRUE)
 
 fb_stock |> autoplot() +
     labs(title = "FB Stock Open Price")
@@ -128,6 +140,8 @@ fit |> forecast() |> autoplot(recent_production)
 
 <p> The residuals are not white noise. This can be concluded from the results from the ACF function demonstrating peaks in Q4. </p>
 
+#### Repeat the previous exercise using the Australian Exports series from global_economy and the Bricks series from aus_production. Use whichever of NAIVE() or SNAIVE() is more appropriate in each case
+
 ```{r exports_bricks}
 
 aus_exports <- global_economy |>
@@ -155,10 +169,105 @@ fit |> forecast() |> autoplot(bricks) +
 ```   
 <p> This data is not seasonal for the exports, therefore NAIVE is a better choice of model. For the Bricks data, the SNAIVE is better as this is broken down into quarters. The lag plot demonstrates clear seasonality with brick production increasing during Q4 and a reduction in production until the following quarter next year.</p>
 
-#### Apply a seasonal naïve method to the quarterly Australian beer production data from 1992. Check if the residuals look like white noise, and plot the forecasts. The following code will help.
+#### Produce forecasts for the 7 Victorian series in aus_livestock using SNAIVE(). Plot the resulting forecasts including the historical data. Is this a reasonable benchmark for these series?
 
-```{r exports_bricks}
+```{r 7_victorian_series}
 
-
+aus_livestock |>
+  filter(State == "Victoria") |>
+  model(SNAIVE(Count ~ lag("2 years"))) |>
+  forecast(h = "2 years") %>%
+  autoplot(aus_livestock) +
+  labs(title = "Animals in Victoria") +
+  facet_wrap(~Animal, scales = "free")
 
 ```   
+
+<p> Lambs and Calves may benefit from a trend model as overtime the number of calves has increased steadily and the number of lambs increased. For the rest, there is clear seasonal patterns within the data so a SNAIVE model is more suitable.</p>
+
+#### Are the following statements true or false? Explain your answer.
+
+#### Good forecast methods should have normally distributed residuals.
+
+<p> Yes normally distributed residuals outlines that there is less of a chance of the data being white noise and the model being more accurate.</p>
+
+#### A model with small residuals will give good forecasts.
+
+<p> No, even though there is little difference between the forecast and the actual values, the pattern of the data might change.</p>
+
+#### The best measure of forecast accuracy is MAPE.
+
+<p> This is generally the most used metric.</p>
+
+#### If your model doesn’t forecast well, you should make it more complicated.
+
+<p> Nope, sometimes choosing a more simplistic model can provide better results.</p>
+
+#### Always choose the model with the best forecast accuracy as measured on the test set.
+
+<p> No, this can result in overfitting. Consider the metric the model has against the validation/testing set.</p>
+
+#### For your retail time series (from Exercise 7 in Section 2.10):
+
+#### Create a training dataset consisting of observations before 2011 using
+
+```{r retail_split}
+
+set.seed(12345678)
+myseries <- aus_retail |>
+  filter(`Series ID` == sample(aus_retail$`Series ID`,1))
+
+myseries_train <- myseries |>
+  filter(year(Month) < 2011)
+
+```   
+
+#### Check that your data have been split appropriately by producing the following plot.
+
+```{r retail_split2}
+
+autoplot(myseries, Turnover) +
+  autolayer(myseries_train, Turnover, colour = "red")
+
+``` 
+#### Fit a seasonal naïve model using SNAIVE() applied to your training data (myseries_train).
+
+```{r retail_split3}
+
+fit <- myseries_train |>
+  model(SNAIVE(Turnover))
+
+``` 
+
+#### Check the residuals.
+
+```{r retail_split4}
+
+fit |> gg_tsresiduals()
+
+``` 
+#### Produce forecasts for the test data
+
+```{r retail_split5}
+
+fc <- fit |>
+  forecast(new_data = anti_join(myseries, myseries_train))
+fc |> autoplot(myseries)
+
+``` 
+
+#### Compare the accuracy of your forecasts against the actual values.
+
+```{r retail_split6}
+
+fit |> accuracy()
+fc |> accuracy(myseries)
+
+```
+
+#### Consider the number of pigs slaughtered in New South Wales (data set aus_livestock).
+
+```{r q8}
+
+
+```
