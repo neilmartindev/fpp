@@ -267,7 +267,58 @@ fc |> accuracy(myseries)
 
 #### Consider the number of pigs slaughtered in New South Wales (data set aus_livestock).
 
+#### Produce some plots of the data in order to become familiar with it.
+
 ```{r q8}
 
+pigs <- aus_livestock |>
+  filter(Animal == "Pigs" & State == "New South Wales")
+
+pigs
+
+pigs |> autoplot()
+
+pigs |> gg_season()
+
+pigs |> gg_subseries()
 
 ```
+#### Create a training set of 486 observations, withholding a test set of 72 observations (6 years).
+```{r q81}
+
+pigs_train <- pigs |>
+  filter(year(Month) < 2014)
+
+autoplot(pigs, Count) +
+  autolayer(pigs_train, Count, colour = "red")
+
+```
+
+#### Try using various benchmark methods to forecast the training set and compare the results on the test set. Which method did best?
+
+```{r q82}
+
+pigs_fit <- pigs_train |>
+  model(SNAIVE(Count))
+
+accuracy(pigs_fit)
+
+pigs_fc <- pigs_fit |>
+  forecast(h = 12, level = NULL) |>
+  autoplot(pigs_train) +
+  labs(title = "Piggy Forecast")
+pigs_fc
+
+```
+<p> Due to the stucture of the time series index, seasonal will likely always perform better. </p>
+
+#### Check the residuals of your preferred method. Do they resemble white noise?
+
+```{r q83}
+
+pigs_fit |> gg_tsresiduals() +
+  ggtitle("Residuals")
+
+```
+
+<p> No, there does not appear to be white noise as the residuals are consistent.
