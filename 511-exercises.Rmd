@@ -322,3 +322,41 @@ pigs_fit |> gg_tsresiduals() +
 ```
 
 <p> No, there does not appear to be white noise as the residuals are consistent.
+
+#### Create a training set for household wealth (hh_budget) by withholding the last four years as a test set.
+
+```{r q84}
+
+hh_budget_train <- hh_budget |>
+  filter(Year <= 2010)
+
+fit <- hh_budget_train |>
+  model(RW(Wealth ~ drift()))
+
+accuracy(fit)
+
+fc <- fit |>
+  forecast(h = 6, level=NULL) |>
+  autoplot(hh_budget_train)+
+  labs(title = "6 Year Household Wealth Forecast")
+
+fc
+
+```
+#### Create a training set for Australian takeaway food turnover (aus_retail) by withholding the last four years as a test set.
+
+```{r q85}
+
+takeaway <- aus_retail |>
+  filter(Industry == "Cafes, restaurants and takeaway food services")
+
+tw_train <- takeaway |>
+  filter(year(Month) <= 2014)
+
+```
+#### Fit all the appropriate benchmark methods to the training set and forecast the periods covered by the test set.
+
+```{r q86}
+
+
+```
