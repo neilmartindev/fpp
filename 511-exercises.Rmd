@@ -325,7 +325,7 @@ pigs_fit |> gg_tsresiduals() +
 
 #### Create a training set for household wealth (hh_budget) by withholding the last four years as a test set.
 
-```{r q84}
+```{r 91}
 
 hh_budget_train <- hh_budget |>
   filter(Year <= 2010)
@@ -345,7 +345,7 @@ fc
 ```
 #### Create a training set for Australian takeaway food turnover (aus_retail) by withholding the last four years as a test set.
 
-```{r q85}
+```{r 101}
 
 takeaway <- aus_retail |>
   filter(Industry == "Cafes, restaurants and takeaway food services")
@@ -356,7 +356,186 @@ tw_train <- takeaway |>
 ```
 #### Fit all the appropriate benchmark methods to the training set and forecast the periods covered by the test set.
 
-```{r q86}
+```{r q102} 
+
+fit <- takeaway |>
+  model(RW(Turnover ~ drift()))
+
+fit
+
+fit |>
+  forecast ( h = 48) |>
+  autoplot(takeaway) + 
+  labs(title = "Australian Takeaway Food Turnover",
+       subtitle = "Apr 1982 - Dec 2018, Forecasted until Dec 2022") +
+  facet_wrap(~State, scales = "free")
+
+```
+#### We will use the Bricks data from aus_production (Australian quarterly clay brick production 1956–2005) for this exercise.
+
+#### Use an STL decomposition to calculate the trend-cycle and seasonal indices. (Experiment with having fixed or changing seasonality.)
+
+```{r q111} 
+
+bricks_additive <- bricks |>
+  model(classical_decomposition(Bricks, type = "additive")) |>
+  components() |>
+  autoplot() +
+  labs(title = "Classical additive decomposition of Australian brick production")
+
+bricks_additive
 
 
 ```
+
+```{r q112} 
+
+bricks_multi <- bricks |>
+  model(classical_decomposition(Bricks, type = "multiplicative")) |>
+  components() |>
+  autoplot() +
+  labs(title = "Classical multiplicative decomposition of Australian brick production")
+
+bricks_multi
+
+
+```
+
+```{r q113} 
+
+bricks_stl <- bricks |>
+  model(STL(Bricks ~ season(window = 4), robust = TRUE)) |>
+  components() |>
+  autoplot() +
+  labs(title = "STL decomposition of Australian brick production")
+
+bricks_stl
+
+
+bricks_stl_per <- bricks |>
+  model(STL(Bricks ~ season(window = 'periodic'), robust = TRUE)) |>
+  components() |>
+  autoplot() +
+  labs(title = "Periodic STL decomposition of Australian brick production")
+
+bricks_stl_per
+
+
+```
+
+#### Compute and plot the seasonally adjusted data.
+
+
+```{r q114} 
+
+bricks
+
+bricks_season <- bricks |>
+  model(stl = STL(Bricks)) 
+
+brick_comp <- components(bricks_season)
+
+brick_season_adjust <- bricks |>
+  autoplot(Bricks, color = "green") +
+  autolayer(components(bricks_season), season_adjust, color = "red") +
+  labs(title = "Seasonally adjusted Australian bricks data")
+
+brick_season_adjust
+```
+
+#### Use a naïve method to produce forecasts of the seasonally adjusted data.
+
+```{r q115} 
+
+brick_trend <- brick_comp |>
+  select(-c(.model, Bricks, trend, season_year, remainder))
+
+brick_trend |>
+  model(NAIVE(season_adjust)) |>
+  forecast( h = "5 years") |>
+  autoplot(brick_trend) +
+  labs(title = "Seasonally adjusted Naive forecast", y = "Bricks")
+
+```
+
+#### tourism contains quarterly visitor nights (in thousands) from 1998 to 2017 for 76 regions of Australia.
+
+#### Extract data from the Gold Coast region using filter() and aggregate total overnight trips (sum over Purpose) using summarise(). Call this new dataset gc_tourism.
+
+```{r q120} 
+
+gc_tourism <- tourism |>
+  filter(Region == "Gold Coast") |>
+  group_by(Purpose) |>
+  summarise(Total_Overnight_Trips = sum(Trips, na.rm = TRUE))
+
+range(gc_tourism$Quarter)
+
+gc_train_1 <- gc_tourism |>
+  slice(1:(n()-4))
+
+gc_train_2 <- gc_tourism |>
+  slice(1:(n()-8))
+
+gc_train_3 <- gc_tourism |>
+  slice(1:(n()-12))
+
+gc_train_1
+gc_train_2
+gc_train_3
+
+```
+#### Compute one year of forecasts for each training set using the seasonal naïve (SNAIVE()) method. Call these gc_fc_1, gc_fc_2 and gc_fc_3, respectively.
+
+```{r q121} 
+
+gc_tourism <- tourism |>
+  filter(Region == "Gold Coast") |>
+  group_by(Purpose) |>
+  summarise(Total_Overnight_Trips = sum(Trips, na.rm = TRUE))
+
+range(gc_tourism$Quarter)
+
+gc_train_1 <- gc_tourism |>
+  slice(1:(n()-4))
+
+gc_train_2 <- gc_tourism |>
+  slice(1:(n()-8))
+
+gc_train_3 <- gc_tourism |>
+  slice(1:(n()-12))
+
+gc_train_1
+gc_train_2
+gc_train_3
+
+gc_fc_1 <- gc_train_1 |>
+  model(SNAIVE(Total_Overnight_Trips)) |>
+  forecast( h = 4) 
+
+gc_fc_1 |>
+  autoplot(gc_train_1) +
+  labs(title = "GC Train 1 SNaive Forecast")
+
+gc_fc_2 <- gc_train_2 |>
+  model(SNAIVE(Total_Overnight_Trips)) |>
+  forecast( h = 4)
+
+gc_fc_2 |> autoplot(gc_train_2) +
+  labs(title = "GC Train 2 SNaive Forecast")
+
+gc_fc_3 <- gc_train_3 |>
+  model(SNAIVE(Total_Overnight_Trips)) |>
+  forecast( h = 4) 
+
+gc_fc_3 |>   autoplot(gc_train_3) +
+  labs(title = "GC Train 3 SNaive Forecast")
+
+gc_fc_1 |> accuracy(gc_tourism)
+
+gc_fc_2 |> accuracy(gc_tourism)
+
+gc_fc_3 |> accuracy(gc_tourism)
+
+```
+<p> It's clear that the gc_fc_3 has the lowest MAPE. This is due removing the last 3 years of observations. </p>
