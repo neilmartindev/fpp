@@ -37,3 +37,4 @@ aus_cafe <- aus_retail |>
          year(Month) %in% 2004:2019) |>
   summarise(Turnover = sum(Turnover))
 aus_cafe |> autoplot(Turnover)
+
