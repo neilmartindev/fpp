@@ -1,0 +1,145 @@
+---
+title: "Forecasting: Principles and Practice Chapter 7 Exercises"
+author: "Neil Martin"
+date: "2024-09-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+load(".RData")
+library(fpp3)
+library(knitr)
+library(ggplot2)
+library(readxl)
+library(dplyr)
+library(readr)
+library(seasonal)
+library(latex2exp)
+library(tsibble)
+library(feasts)
+library(tidyr)
+```
+#### Half-hourly electricity demand for Victoria, Australia is contained in vic_elec. Extract the January 2014 electricity demand, and aggregate this data to daily with daily total demands and maximum temperatures.
+
+```{r q1}
+
+jan14_vic_elec <- vic_elec |>
+  filter(yearmonth(Time) == yearmonth("2014 Jan")) |>
+  index_by(Date = as_date(Time)) |>
+  summarise(
+    Demand = sum(Demand),
+    Temperature = max(Temperature)
+  )
+
+```
+
+#### Plot the data and find the regression model for Demand with temperature as a predictor variable. Why is there a positive relationship?
+
+```{r q2}
+
+jan14_vic_elec |> 
+  pivot_longer(2:3, names_to="key", values_to="value") |>
+  autoplot(.vars = value) +
+  facet_grid(vars(key), scales = "free_y")
+
+```
+
+<p>There is a positive linear relationship between the demand and the temperature. Inferring that with the increase in temperature, this causes more people to turn on their AC.</p>
+
+```{r q3}
+
+fit <- jan14_vic_elec |> 
+  model(TSLM(Demand ~ Temperature))
+
+fit |> report()
+
+```
+
+#### Produce a residual plot. Is the model adequate? Are there any outliers or influential observations?
+
+```{r q4}
+
+fit |> gg_tsresiduals()
+
+```
+
+<p>The distributions of the residuals seems normal but there is a massive increase in the afc around lag 12. This and the lags from 1-12 suggest there is a seasonal pattern in the data.</p>
+
+#### Use the model to forecast the electricity demand that you would expect for the next day if the maximum temperature was 15∘C and compare it with the forecast if the with maximum temperature was 35∘C. Do you believe these forecasts? The following R code will get you started:
+
+```{r q5}
+
+demand35 <- jan14_vic_elec |>
+  model(TSLM(Demand ~ Temperature)) |>
+  forecast(
+    new_data(jan14_vic_elec, 1) |>
+      mutate(Temperature = 35)
+  ) |>
+  autoplot(jan14_vic_elec)
+
+demand35
+
+```
+
+<p> I do believe this forecast is realistic however, the forecast for the initial 15c looked too low so it could be not as accurate for lower temperatures.</p>
+
+#### Give prediction intervals for your forecasts.
+
+```{r q6}
+ 
+# fit <- lm(Demand ~ Temperature, data=jan14_vic_elec)
+
+# forecast(fit, newdata=data.frame(Temperature=c(15,35)))
+
+```
+
+#### E. Plot Demand vs Temperature for all of the available data in vic_elec aggregated to daily total demand and maximum temperature. What does this say about your model?
+
+```{r q7}
+
+plot(Demand~Temperature, data=vic_elec, main="Demand vs. Temperature")
+
+```
+
+<p>This shows that the model picks up well on the temperature increases and the associated demand. However, when it does to lower temperatures, it has the potential to be less accurate.</p>
+
+#### Data set olympic_running contains the winning times (in seconds) in each Olympic Games sprint, middle-distance and long-distance track events from 1896 to 2016.
+
+```{r q8}
+
+olympic_running
+
+ggplot(olympic_running, aes(x = Year, y = Time, colour = Sex)) +
+  geom_line() +
+  geom_point(size = 1) +
+  facet_wrap(~Length, scales = "free_y", nrow =2) +
+  theme_minimal() +
+  scale_color_brewer(palette = "Dark2") +
+  theme(legend.position = "bottom", legend.title = element_blank())
+
+``` 
+
+#### Fit a regression line to the data for each event. Obviously the winning times have been decreasing, but at what average rate per year?
+
+```{r q9}
+
+fit <- olympic_running |>
+  model(TSLM(Time ~ trend()))
+
+tidy(fit)
+
+``` 
+#### The data set souvenirs concerns the monthly sales figures of a shop which opened in January 1987 and sells gifts, souvenirs, and novelties. The shop is situated on the wharf at a beach resort town in Queensland, Australia. The sales volume varies with the seasonal population of tourists. There is a large influx of visitors to the town at Christmas and for the local surfing festival, held every March since 1988. Over time, the shop has expanded its premises, range of products, and staff.
+
+```{r q10}
+
+souvenirs
+
+souvenirs |> autoplot()
+
+souvenirs |> acf()
+
+``` 
+<p>We can see a clear seasonal inrease in sales due to the influx of people around Christmas or Q4. there is a slight uptick also during the summer months. The current model has a positive trend over the amount of observations.</p>
+
+### Struggled with this chapter and its exercises, moving to chapter 8.
