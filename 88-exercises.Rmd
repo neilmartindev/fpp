@@ -1,0 +1,119 @@
+---
+title: "Forecasting: Principles and Practice Chapter 8 Exercises"
+author: "Neil Martin"
+date: "2024-10-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+load(".RData")
+library(fpp3)
+library(knitr)
+library(ggplot2)
+library(readxl)
+library(dplyr)
+library(readr)
+library(seasonal)
+library(latex2exp)
+library(tsibble)
+library(feasts)
+library(tidyr)
+```
+#### Consider the the number of pigs slaughtered in Victoria, available in the aus_livestock dataset.
+
+#### Use the ETS() function to estimate the equivalent model for simple exponential smoothing. Find the optimal values of α and ℓ0, and generate forecasts for the next four months.
+
+```{r q1}
+
+vic_pigs <- aus_livestock |> filter(Animal == "Pigs", State == "Victoria")
+
+vic_pigs |> autoplot()
+
+vicpig_mod <- vic_pigs |>
+  model(ETS(Count ~ error("A") + trend("N") + season("N"))) 
+
+report(vicpig_mod)
+
+vicpig_mod
+
+vicpig_fc <- vicpig_mod |>
+  forecast(h = 4) |>
+  autoplot(vic_pigs)
+
+vicpig_fc
+
+```
+#### Data set global_economy contains the annual Exports from many countries. Select one country to analyse.
+
+```{r q5}
+
+india <- global_economy |>
+  filter(Country == "India")
+
+india |> autoplot(Exports)
+
+```
+
+<p>From this plot we can see that the German exports have been following a significant linear trend from the early 1990s. There is a slight dip around the 2008 financial crash but there seems to be an uptick in exports from Germany after this.  </p>
+
+#### Use an ETS(A,N,N) model to forecast the series, and plot the forecasts.
+
+```{r q5b}
+
+india_mod <- india |>
+  model(ETS(Exports ~ error("A") + trend("N") + season("N"))) 
+
+report(india_mod)
+
+india_mod
+
+india_fc <- india_mod |>
+  forecast(h = 4) |>
+  autoplot(india)
+
+india_fc
+
+fitted_india <- fitted(india_mod)
+
+residuals <- india$Exports - fitted_india$.fitted
+
+rmse <- sqrt(mean(residuals^2))
+
+print(rmse)
+
+```
+#### Compare the results to those from an ETS(A,A,N) model. (Remember that the trended model is using one more parameter than the simpler model.) Discuss the merits of the two forecasting methods for this data set.
+
+#### Compare the forecasts from both methods. Which do you think is best?
+```{r q5cd}
+
+india_mod <- india |>
+  model(ETS(Exports ~ error("A") + trend("A") + season("N"))) 
+
+report(india_mod)
+
+india_mod
+
+india_fc <- india_mod |>
+  forecast(h = 4) |>
+  autoplot(india)
+
+india_fc
+
+fitted_india <- fitted(india_mod)
+
+residuals <- india$Exports - fitted_india$.fitted
+
+rmse <- sqrt(mean(residuals^2))
+
+print(rmse)
+
+```
+
+<p> The RMSE shows that the AAN model is roughly 0.02 better than the ANN model.</p>
+
+#### Forecast the Chinese GDP from the global_economy data set using an ETS model. Experiment with the various options in the ETS() function to see how much the forecasts change with damped trend, or with a Box-Cox transformation. Try to develop an intuition of what each is doing to the forecasts.
+
+```{r q6}
+
+```
