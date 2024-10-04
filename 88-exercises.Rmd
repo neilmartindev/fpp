@@ -155,6 +155,21 @@ aus_gas <- aus_production |>
 
 aus_gas |> autoplot()
 
+aus_gas_mod <- aus_gas|>
+    model(additive = ETS(Gas ~ error("A") + trend("A") + season("A")),
+          multiplicative = ETS(Gas ~ error("M") + trend("A") + season("M")),
+          `damped multiplicative` = ETS(Gas ~ error("M") + trend("Ad", phi = 0.9) + season("M")))
+
+aus_gas_mod
+
+report(aus_gas_mod)
+
+aus_gas_fc <- aus_gas_mod |>
+  forecast(h = 10) |>
+  autoplot(aus_gas) + labs(title = "Australian Gas Production")
+
+aus_gas_fc
+
 ```
 
 #### Moving to Chapter 9
