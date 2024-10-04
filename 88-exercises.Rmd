@@ -116,4 +116,45 @@ print(rmse)
 
 ```{r q6}
 
+ch_gdp <- global_economy |>
+  filter(Country == "China") |>
+  mutate(GDP_Billions = GDP / 1e9)
+
+ch_gdp |> autoplot(GDP_Billions)
+
+lambda <- ch_gdp |>
+  features(GDP_Billions, features = guerrero) |>
+  pull(lambda_guerrero)
+
+ch_gdp_mod <- ch_gdp |>
+    model(`Simple` = ETS(GDP ~ error("A") + trend("N") + season("N")),
+        `Holt's method` = ETS(GDP ~ error("A") + trend("A") + season("N")),
+        `Damped Holt's method` = ETS(GDP ~ error("A") + trend("Ad", phi = 0.8) + season("N")),
+        `Box-Cox` = ETS(box_cox(GDP,lambda) ~ error("A") + trend("A") + season("N")),
+        `Box-Cox Damped` = ETS(box_cox(GDP,lambda) ~ error("A") + trend("Ad", phi = 0.8) + season("N")),
+        `Log` = ETS(log(GDP) ~ error("A") + trend("A") + season("N")),
+        `Log Damped` = ETS(log(GDP) ~ error("A") + trend("Ad", phi = 0.8) + season("N"))
+        )
+
+ch_gdp_mod
+
+ch_gdp_fc <- ch_gdp_mod |>
+  forecast(h = 20) |>
+  autoplot(ch_gdp) + labs(title = "Chinese 2040 GDP Forecast")
+
+ch_gdp_fc
+
 ```
+
+#### Find an ETS model for the Gas data from aus_production and forecast the next few years. Why is multiplicative seasonality necessary here? Experiment with making the trend damped. Does it improve the forecasts?
+
+```{r q7}
+
+aus_gas <- aus_production |>
+  select(Gas)
+
+aus_gas |> autoplot()
+
+```
+
+#### Moving to Chapter 9
