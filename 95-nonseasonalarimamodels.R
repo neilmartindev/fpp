@@ -18,9 +18,10 @@ fit |>
 
 egypt <- global_economy |> filter(Code == "EGY")
 egypt |> ACF(Exports) |> autoplot()
-cegypt |> PACF(Exports) |> autoplot()
+egypt |> PACF(Exports) |> autoplot()
 
 global_economy |>
   filter(Code == "EGY") |>
   gg_tsdisplay(Exports, plot_type = "partial")
+
 
